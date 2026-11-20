@@ -4,9 +4,27 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Alpha TopUp</title>
+<style>
+body{font-family:sans-serif;max-width:420px;margin:0 auto;padding:20px;background:#f4f6f8}
+h1{text-align:center;color:#0a5}
+label{display:block;margin-top:16px;font-weight:bold}
+select,input,button{width:100%;padding:12px;margin-top:6px;font-size:16px;box-sizing:border-box;border:1px solid #ccc;border-radius:8px}
+button{background:#0a5;color:#fff;border:0;margin-top:24px;font-weight:bold}
+</style>
 </head>
-<body style="font-family:sans-serif;text-align:center;padding:40px">
+<body>
 <h1>Alpha TopUp</h1>
-<p>Airtime da Data cikin sauƙi</p>
+<label>Network</label>
+<select id="net">
+<option>MTN</option>
+<option>Airtel</option>
+<option>Glo</option>
+<option>9mobile</option>
+</select>
+<label>Lambar waya</label>
+<input id="phone" type="tel" placeholder="08012345678">
+<label>Adadin kuɗi (₦)</label>
+<input id="amt" type="number" placeholder="100">
+<button onclick="alert('Wannan gwaji ne tukuna')">Sayi Airtime</button>
 </body>
 </html>
