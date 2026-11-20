@@ -10,14 +10,31 @@ h1{text-align:center;color:#0a5;margin-bottom:4px}
 .tag{text-align:center;color:#555;margin-top:0}
 label{display:block;margin-top:16px;font-weight:bold}
 select,input,button{width:100%;padding:12px;margin-top:6px;font-size:16px;box-sizing:border-box;border:1px solid #ccc;border-radius:8px}
-button{background:#0a5;color:#fff;border:0;margin-top:24px;font-weight:bold}
+button{background:#0a5;color:#fff;border:0;margin-top:20px;font-weight:bold}
+button.alt{background:#fff;color:#0a5;border:1px solid #0a5}
 button:disabled{background:#999}
+.wallet{background:#fff;border-radius:8px;padding:14px;margin-top:12px;text-align:center}
+#who{text-align:center;color:#555;word-break:break-all}
 #msg{margin-top:20px;text-align:center;font-weight:bold}
 </style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
 <h1>Alpha TopUp</h1>
 <p class="tag">Airtime and Data made easy</p>
+
+<div id="auth">
+<label>Email</label>
+<input id="email" type="email" placeholder="you@example.com">
+<label>Password</label>
+<input id="pass" type="password" placeholder="At least 6 characters">
+<button id="login">Log in</button>
+<button id="signup" class="alt">Create account</button>
+</div>
+
+<div id="app" style="display:none">
+<p id="who"></p>
+<div class="wallet">Wallet balance: <b id="bal">...</b></div>
 <label>Network</label>
 <select id="net">
 <option>MTN</option>
@@ -30,38 +47,77 @@ button:disabled{background:#999}
 <label>Amount (₦)</label>
 <input id="amt" type="number" placeholder="100">
 <button id="btn">Buy Airtime</button>
+<button id="logout" class="alt">Log out</button>
+</div>
+
 <div id="msg"></div>
+
 <script>
-var btn=document.getElementById("btn");
-var msg=document.getElementById("msg");
-btn.onclick=async function(){
-  btn.disabled=true;
-  msg.style.color="#555";
-  msg.textContent="Please wait...";
+var sb=supabase.createClient("https://iomxvvqyiwggevrwsefr.supabase.co","sb_publishable_MU02XxqcfZgBunXhttTlqQ_nm7SAOW1");
+var API="https://alpha-topup-backend-qdef.vercel.app/api/buy";
+function $(i){return document.getElementById(i)}
+function say(t,c){$("msg").style.color=c||"#555";$("msg").textContent=t}
+
+function show(s){
+  if(s){
+    $("auth").style.display="none";
+    $("app").style.display="block";
+    $("who").textContent=s.user.email;
+    loadBal();
+  }else{
+    $("auth").style.display="block";
+    $("app").style.display="none";
+  }
+}
+
+async function loadBal(){
+  var r=await sb.from("wallets").select("balance").maybeSingle();
+  $("bal").textContent=r.data?"₦"+Number(r.data.balance).toLocaleString():"₦0";
+}
+
+$("login").onclick=async function(){
+  say("Please wait...");
+  var r=await sb.auth.signInWithPassword({email:$("email").value,password:$("pass").value});
+  if(r.error){say(r.error.message,"#c00");return}
+  say("");
+  show(r.data.session);
+};
+
+$("signup").onclick=async function(){
+  say("Please wait...");
+  var r=await sb.auth.signUp({email:$("email").value,password:$("pass").value});
+  if(r.error){say(r.error.message,"#c00");return}
+  if(r.data.session){say("");show(r.data.session)}
+  else say("Account created. Check your email to confirm, then log in.","#0a5");
+};
+
+$("logout").onclick=async function(){
+  await sb.auth.signOut();
+  say("");
+  show(null);
+};
+
+$("btn").onclick=async function(){
+  var s=(await sb.auth.getSession()).data.session;
+  if(!s){show(null);return}
+  $("btn").disabled=true;
+  say("Please wait...");
   try{
-    var r=await fetch("https://alpha-topup-backend-qdef.vercel.app/api/buy",{
+    var r=await fetch(API,{
       method:"POST",
-      headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({
-        network:document.getElementById("net").value,
-        phone:document.getElementById("phone").value,
-        amount:document.getElementById("amt").value
-      })
+      headers:{"Content-Type":"application/json","Authorization":"Bearer "+s.access_token},
+      body:JSON.stringify({network:$("net").value,phone:$("phone").value,amount:$("amt").value})
     });
     var d=await r.json();
-    if(d.code==="000"){
-      msg.style.color="#0a5";
-      msg.textContent="Success: airtime sent";
-    }else{
-      msg.style.color="#c00";
-      msg.textContent=d.response_description||d.error||"Something went wrong";
-    }
+    if(d.ok){say(d.message,"#0a5")}else{say(d.error||"Something went wrong","#c00")}
   }catch(e){
-    msg.style.color="#c00";
-    msg.textContent="Network error. Try again.";
+    say("Network error. Try again.","#c00");
   }
-  btn.disabled=false;
+  $("btn").disabled=false;
+  loadBal();
 };
+
+sb.auth.getSession().then(function(r){show(r.data.session)});
 </script>
 </body>
 </html>
