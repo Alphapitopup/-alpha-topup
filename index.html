@@ -11,6 +11,8 @@ h1{text-align:center;color:#0a5;margin-bottom:4px}
 label{display:block;margin-top:16px;font-weight:bold}
 select,input,button{width:100%;padding:12px;margin-top:6px;font-size:16px;box-sizing:border-box;border:1px solid #ccc;border-radius:8px}
 button{background:#0a5;color:#fff;border:0;margin-top:24px;font-weight:bold}
+button:disabled{background:#999}
+#msg{margin-top:20px;text-align:center;font-weight:bold}
 </style>
 </head>
 <body>
@@ -27,6 +29,39 @@ button{background:#0a5;color:#fff;border:0;margin-top:24px;font-weight:bold}
 <input id="phone" type="tel" placeholder="08012345678">
 <label>Amount (₦)</label>
 <input id="amt" type="number" placeholder="100">
-<button onclick="alert('This is a test for now')">Buy Airtime</button>
+<button id="btn">Buy Airtime</button>
+<div id="msg"></div>
+<script>
+var btn=document.getElementById("btn");
+var msg=document.getElementById("msg");
+btn.onclick=async function(){
+  btn.disabled=true;
+  msg.style.color="#555";
+  msg.textContent="Please wait...";
+  try{
+    var r=await fetch("https://alpha-topup-backend-qdef.vercel.app/api/buy",{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({
+        network:document.getElementById("net").value,
+        phone:document.getElementById("phone").value,
+        amount:document.getElementById("amt").value
+      })
+    });
+    var d=await r.json();
+    if(d.code==="000"){
+      msg.style.color="#0a5";
+      msg.textContent="Success: airtime sent";
+    }else{
+      msg.style.color="#c00";
+      msg.textContent=d.response_description||d.error||"Something went wrong";
+    }
+  }catch(e){
+    msg.style.color="#c00";
+    msg.textContent="Network error. Try again.";
+  }
+  btn.disabled=false;
+};
+</script>
 </body>
 </html>
